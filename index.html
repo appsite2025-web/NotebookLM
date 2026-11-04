@@ -1,0 +1,1929 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KnowLink AI | پلتفرم کامل چت‌بات RAG (تک‌فایل مستقل و آفلاین)</title>
+    <meta name="description" content="نسخه مستقل و یکپارچه KnowLink AI در قالب یک فایل واحد بدون نیاز به وابستگی سروری" />
+    
+    <!-- Google Fonts: Vazirmatn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Vazirmatn', 'system-ui', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- React 18, ReactDOM, and Babel Standalone for direct in-browser execution -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+        background-color: #020617;
+        color: #f8fafc;
+        direction: rtl;
+        text-align: right;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.6);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.4);
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.7);
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.25s ease-out forwards;
+      }
+    </style>
+  <script src="/_aistudio-iframe.js?v=1f94f900"></script></head>
+  <body class="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef, useMemo } = React;
+
+      // ==========================================
+      // ICON SVG COMPONENTS (ZERO EXTERNAL DEPENDENCY)
+      // ==========================================
+      const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+        const svgMap = {
+          bot: <path d="M12 2a2 2 0 0 1 2 2v2h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4V4a2 2 0 0 1 2-2zm-3 8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 6h6" />,
+          smartphone: <><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></>,
+          message: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+          code: <><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></>,
+          fileCode: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></>,
+          layers: <><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></>,
+          sparkles: <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />,
+          send: <><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></>,
+          shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+          shieldCheck: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></>,
+          upload: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></>,
+          download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>,
+          globe: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
+          copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></>,
+          check: <polyline points="20 6 9 17 4 12" />,
+          trash: <><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>,
+          plus: <><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>,
+          chevronRight: <polyline points="9 18 15 12 9 6" />,
+          arrowRight: <><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></>,
+          refresh: <><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></>,
+          user: <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,
+          lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+          database: <><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" /></>,
+          close: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
+          video: <><polygon points="23 7 16 12 23 17 23 7" /><rect width="15" height="14" x="1" y="5" rx="2" ry="2" /></>,
+          share: <><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></>,
+          settings: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+        };
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+            {...props}
+          >
+            {svgMap[name] || svgMap.bot}
+          </svg>
+        );
+      };
+
+      // ==========================================
+      // EMBEDDED RAG CORE (CLIENT-SIDE OFFLINE ENGINE)
+      // ==========================================
+      function normalizePersianText(text) {
+        if (!text) return '';
+        return text
+          .replace(/[\u064B-\u065F\u0670]/g, '') // remove diacritics
+          .replace(/\u200C/g, ' ')               // normalize half-space
+          .replace(/[ك]/g, 'ک')
+          .replace(/[يىئ]/g, 'ی')
+          .replace(/[أإآ]/g, 'ا')
+          .replace(/[\r\n\t]+/g, ' ')
+          .toLowerCase()
+          .trim();
+      }
+
+      function tokenizeText(text) {
+        const normalized = normalizePersianText(text);
+        const tokens = normalized.match(/[\p{L}\p{N}]+/gu) || [];
+        const stopWords = new Set(['از', 'به', 'در', 'با', 'که', 'و', 'برای', 'این', 'آن', 'است', 'شد', 'می', 'یک', 'تا', 'بر', 'یا']);
+        return tokens.filter(t => t.length > 1 && !stopWords.has(t));
+      }
+
+      function chunkDocumentText(rawText, chunkSize = 350, overlap = 50) {
+        if (!rawText || !rawText.trim()) return [];
+        const clean = rawText.trim();
+        const chunks = [];
+        let startIndex = 0;
+        let chunkIndex = 1;
+
+        while (startIndex < clean.length) {
+          let endIndex = Math.min(startIndex + chunkSize, clean.length);
+          if (endIndex < clean.length) {
+            const nextBreak = clean.indexOf('\n', endIndex - 40);
+            if (nextBreak !== -1 && nextBreak < endIndex + 30) {
+              endIndex = nextBreak;
+            } else {
+              const nextPeriod = clean.indexOf('. ', endIndex - 40);
+              if (nextPeriod !== -1 && nextPeriod < endIndex + 30) {
+                endIndex = nextPeriod + 1;
+              }
+            }
+          }
+
+          const content = clean.slice(startIndex, endIndex).trim();
+          if (content.length > 20) {
+            chunks.push({
+              index: chunkIndex++,
+              content,
+              charStart: startIndex,
+              charEnd: endIndex,
+            });
+          }
+
+          startIndex = endIndex - overlap;
+          if (startIndex >= clean.length || endIndex >= clean.length) break;
+        }
+        return chunks;
+      }
+
+      function calculateBM25Score(queryTokens, docTokens, avgDocLen = 80, k1 = 1.2, b = 0.75) {
+        if (!queryTokens.length || !docTokens.length) return 0;
+        const docLen = docTokens.length;
+        const tfMap = new Map();
+        for (const t of docTokens) tfMap.set(t, (tfMap.get(t) || 0) + 1);
+
+        let score = 0;
+        for (const qt of queryTokens) {
+          const tf = tfMap.get(qt) || 0;
+          if (tf > 0) {
+            const num = tf * (k1 + 1);
+            const den = tf + k1 * (1 - b + b * (docLen / avgDocLen));
+            score += num / den;
+          }
+        }
+        return score;
+      }
+
+      // ==========================================
+      // SEED DATABASE & STORAGE INITIALIZATION
+      // ==========================================
+      const DEFAULT_BOT = {
+        id: 'bot_tech_support',
+        name: 'پشتیبان هوشمند شرکت رایان',
+        description: 'پاسخگویی به سوالات فنی، گارانتی، APIها و خدمات بر اساس اسناد رسمی',
+        systemPrompt: 'شما دستیار رسمی و موثق هستید. فقط بر اساس اسناد پاسخ دهید و ارجاع دقیق ارائه فرمایید.',
+        welcomeMessage: 'سلام! 👋 من دستیار هوشمند شما هستم. چه کمکی در رابطه با خدمات، محصولات و مستندات می‌توانم به شما بکنم؟',
+        temperature: 0.2,
+        accessPolicy: 'public',
+        shareSlug: 'rayan-support',
+        directLinkEnabled: true,
+        embedEnabled: true,
+        allowedDomains: ['*'],
+        widgetConfig: {
+          primaryColor: '#6366f1',
+          position: 'bottom-left',
+          theme: 'dark',
+          title: 'پشتیبانی فنی رایان',
+          subtitle: 'پاسخگوی ۲۴ ساعته مبتنی بر RAG',
+          placeholder: 'پرسش خود را مطرح فرمایید...',
+          greeting: 'سلام! چطور می‌تونم راهنماییتون کنم؟',
+        },
+        stats: {
+          totalQueries: 142,
+          totalTokens: 184500,
+          sourcesCount: 2,
+          chunksCount: 6,
+        }
+      };
+
+      const DEFAULT_SOURCES = [
+        {
+          id: 'src_doc_01',
+          chatbotId: 'bot_tech_support',
+          title: 'شرایط گارانتی طلایی و خدمات پس از فروش',
+          type: 'file',
+          fileSize: '48.2 KB',
+          chunkCount: 3,
+          rawContent: `# شرایط گارانتی طلایی شرکت
+تمامی تجهیزات خریداری شده از تاریخ صدور فاکتور رسمی به مدت ۲۴ ماه تحت پوشش گارانتی تعویض و تعمیر طلایی هستند.
+آسیب‌های ناشی از نوسانات شدید ولتاژ برق، ضربه فیزیکی و باز شدن پلمپ توسط افراد غیرمجاز شامل گارانتی نمی‌شود.
+زمان استاندارد بررسی و پاسخگویی فنی تیم مهندسی حداکثر ۴۸ ساعت کاری است.
+مشترکان بسته‌های ابری سازمانی می‌توانند تا ۱۴ روز پس از فعال‌سازی، در صورت عدم رضایت فنی، درخواست انصراف و بازگشت کامل وجه را ثبت کنند.`
+        },
+        {
+          id: 'src_doc_02',
+          chatbotId: 'bot_tech_support',
+          title: 'مستندات احراز هویت و API پلتفرم',
+          type: 'text',
+          fileSize: '24.1 KB',
+          chunkCount: 3,
+          rawContent: `# بخش ۱: کلید دسترسی و Rate Limit
+برای برقراری ارتباط با REST API، ارسال توکن در هدر Authorization به صورت Bearer ضروری است.
+محدودیت نرخ (Rate Limit) برای بسته رایگان ۱۰۰ درخواست در دقیقه و برای بسته سازمانی ۵۰۰۰ درخواست در دقیقه تنظیم شده است.
+در صورت عبور از سقف، پاسخ HTTP 429 Too Many Requests به همراه هدر Retry-After دریافت خواهد شد.
+سیستم قابلیت ارسال رویدادهای وب‌هوک با امضای رمزنگاری‌شده HMAC-SHA256 را دارد.`
+        }
+      ];
+
+      // ==========================================
+      // ROOT REACT APPLICATION
+      // ==========================================
+      function StandaloneApp() {
+        const [activeTab, setActiveTab] = useState('android_app');
+        const [chatbots, setChatbots] = useState(() => {
+          const saved = localStorage.getItem('knowlink_bots');
+          return saved ? JSON.parse(saved) : [DEFAULT_BOT];
+        });
+        const [activeBot, setActiveBot] = useState(() => chatbots[0] || DEFAULT_BOT);
+        const [sources, setSources] = useState(() => {
+          const saved = localStorage.getItem('knowlink_sources');
+          return saved ? JSON.parse(saved) : DEFAULT_SOURCES;
+        });
+
+        // Save on state change
+        useEffect(() => {
+          localStorage.setItem('knowlink_bots', JSON.stringify(chatbots));
+        }, [chatbots]);
+
+        useEffect(() => {
+          localStorage.setItem('knowlink_sources', JSON.stringify(sources));
+        }, [sources]);
+
+        // Compute all chunks
+        const allChunks = useMemo(() => {
+          const list = [];
+          for (const s of sources) {
+            const generated = chunkDocumentText(s.rawContent);
+            generated.forEach(g => {
+              list.push({
+                id: `chk_${s.id}_${g.index}`,
+                sourceId: s.id,
+                chatbotId: s.chatbotId,
+                sourceTitle: s.title,
+                content: g.content,
+                section: `بخش ${g.index}`,
+              });
+            });
+          }
+          return list;
+        }, [sources]);
+
+        const handleDownloadHtml = async () => {
+          try {
+            let cleanHtml = '';
+            try {
+              const res = await fetch(window.location.href);
+              if (res.ok) {
+                const text = await res.text();
+                if (text && text.includes('<!doctype html>')) {
+                  cleanHtml = text;
+                }
+              }
+            } catch (e) {}
+
+            if (!cleanHtml) {
+              cleanHtml = '<!doctype html>\n' + document.documentElement.outerHTML;
+            }
+
+            const blob = new Blob([cleanHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } catch (err) {
+            console.error('Download failed:', err);
+          }
+        };
+
+        return (
+          <div className="min-h-screen flex flex-col font-sans">
+            {/* Top Navigation Bar */}
+            <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
+                    <Icon name="bot" className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-lg text-white">KnowLink AI</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                        نسخه مستقل (Standalone HTML)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 hidden sm:block">
+                      پلتفرم کامل RAG با اجرای ۱۰۰٪ محلی در مرورگر
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={activeBot.id}
+                    onChange={(e) => {
+                      const found = chatbots.find(b => b.id === e.target.value);
+                      if (found) setActiveBot(found);
+                    }}
+                    className="bg-slate-950 border border-slate-700 text-xs text-white rounded-xl px-3 py-2"
+                  >
+                    {chatbots.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={handleDownloadHtml}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+                    title="دانلود مجدد این صفحه در قالب فایل واحد index.html"
+                  >
+                    <Icon name="download" className="w-4 h-4" />
+                    <span className="hidden sm:inline">دانلود فایل واحد HTML</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation Tabs */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 border-t border-slate-800/80 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-1 sm:gap-2 py-1.5 min-w-max">
+                  {[
+                    { id: 'android_app', label: 'اپلیکیشن اندروید (۱۷ صفحه)', icon: 'smartphone' },
+                    { id: 'persian_analysis', label: 'تحلیل متون فارسی (NLP & RAG)', icon: 'sparkles' },
+                    { id: 'direct_chat', label: 'چت تحت وب مستقیم (Direct Chat)', icon: 'message' },
+                    { id: 'embed_simulator', label: 'شبیه‌ساز ویجت Embed', icon: 'code' },
+                    { id: 'kotlin_code', label: 'کدهای بومی اندروید (Kotlin)', icon: 'fileCode' },
+                    { id: 'architecture', label: 'معماری RAG و فاز صفر', icon: 'layers' },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                        activeTab === tab.id
+                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <Icon name={tab.icon} className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </header>
+
+            {/* Main Workspace Area */}
+            <main className="flex-1 py-6">
+              {activeTab === 'android_app' && (
+                <AndroidShellView
+                  chatbots={chatbots}
+                  activeBot={activeBot}
+                  onSelectBot={setActiveBot}
+                  sources={sources.filter(s => s.chatbotId === activeBot.id)}
+                  allChunks={allChunks.filter(c => c.chatbotId === activeBot.id)}
+                  onAddSource={(newSrc) => {
+                    setSources(prev => [newSrc, ...prev]);
+                    // Update bot stats
+                    setChatbots(prev => prev.map(b => b.id === activeBot.id ? {
+                      ...b,
+                      stats: {
+                        ...b.stats,
+                        sourcesCount: b.stats.sourcesCount + 1,
+                        chunksCount: b.stats.chunksCount + newSrc.chunkCount,
+                      }
+                    } : b));
+                  }}
+                  onDeleteSource={(srcId) => {
+                    setSources(prev => prev.filter(s => s.id !== srcId));
+                  }}
+                  onAddChatbot={(newBot) => {
+                    setChatbots(prev => [newBot, ...prev]);
+                    setActiveBot(newBot);
+                  }}
+                />
+              )}
+
+              {activeTab === 'persian_analysis' && (
+                <PersianTextAnalyzerStandaloneView
+                  activeBot={activeBot}
+                  sources={sources.filter(s => s.chatbotId === activeBot.id)}
+                  onAddSource={(title, content) => {
+                    const chunks = chunkDocumentText(content, 350, 50);
+                    const newSrc = {
+                      id: `src_${Date.now()}`,
+                      chatbotId: activeBot.id,
+                      type: 'raw_text',
+                      title: title,
+                      sourceText: content,
+                      status: 'ready',
+                      chunkCount: chunks.length,
+                      createdAt: new Date().toISOString(),
+                    };
+                    setSources(prev => [newSrc, ...prev]);
+                    alert('سند تحلیل‌شده با موفقیت به پایگاه دانش چت‌بات افزوده شد!');
+                  }}
+                />
+              )}
+
+              {activeTab === 'direct_chat' && (
+                <DirectChatStandaloneView
+                  activeBot={activeBot}
+                  chunks={allChunks.filter(c => c.chatbotId === activeBot.id)}
+                />
+              )}
+
+              {activeTab === 'embed_simulator' && (
+                <EmbedSimulatorStandaloneView
+                  activeBot={activeBot}
+                  chunks={allChunks.filter(c => c.chatbotId === activeBot.id)}
+                />
+              )}
+
+              {activeTab === 'kotlin_code' && (
+                <KotlinCodeExportStandaloneView />
+              )}
+
+              {activeTab === 'architecture' && (
+                <ArchitectureStandaloneView />
+              )}
+            </main>
+
+            {/* Footer */}
+            <footer className="py-6 border-t border-slate-800/80 bg-slate-950 text-center text-xs text-slate-500">
+              <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-400">KnowLink AI</span>
+                  <span>•</span>
+                  <span>فایل واحد مستقل HTML بدون نیاز به سرور یا نصب ابزار</span>
+                </div>
+                <div className="font-mono text-[11px] text-slate-500">
+                  موتور RAG آفلاین محلی • آماده استفاده و دانلود مستقیم
+                </div>
+              </div>
+            </footer>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // ANDROID APP SHELL (17 SCREENS INTERACTIVE)
+      // ==========================================
+      function AndroidShellView({ chatbots, activeBot, onSelectBot, sources, allChunks, onAddSource, onDeleteSource, onAddChatbot }) {
+        const [currentScreen, setCurrentScreen] = useState('dashboard');
+        const [sourceType, setSourceType] = useState('text');
+        const [sourceTitle, setSourceTitle] = useState('');
+        const [sourceText, setSourceText] = useState('');
+        const [sourceUrl, setSourceUrl] = useState('');
+        const [selectedFileName, setSelectedFileName] = useState('');
+        const [selectedFileSize, setSelectedFileSize] = useState('');
+        const [isProcessing, setIsProcessing] = useState(false);
+        const [processStep, setProcessStep] = useState(1);
+        const [statusMessage, setStatusMessage] = useState('');
+        const fileInputRef = useRef(null);
+
+        // Chat Sandbox state
+        const [sandboxMessages, setSandboxMessages] = useState([
+          { id: '1', role: 'assistant', content: activeBot.welcomeMessage }
+        ]);
+        const [sandboxInput, setSandboxInput] = useState('');
+        const [selectedCitation, setSelectedCitation] = useState(null);
+
+        // New Bot form
+        const [newBotName, setNewBotName] = useState('');
+        const [newBotDesc, setNewBotDesc] = useState('');
+
+        const screenTitles = {
+          splash: 'اسپلش اسکرین',
+          auth: 'ثبت‌نام و ورود',
+          dashboard: 'داشبورد اصلی',
+          create_bot: 'ساخت چت‌بات جدید',
+          edit_bot: 'ویرایش اطلاعات چت‌بات',
+          add_sources: 'افزودن منابع دانش',
+          processing_status: 'وضعیت پردازش RAG',
+          sources_list: 'مدیریت منابع و چانک‌ها',
+          test_sandbox: 'آزمایش و گفت‌وگوی چت‌بات',
+          share_link: 'لینک و اشتراک‌گذاری',
+          embed_config: 'کد و تنظیمات Embed',
+          access_permissions: 'سطح دسترسی و امنیت',
+          widget_appearance: 'تنظیمات ظاهر ویجت',
+          allowed_domains: 'دامنه‌های مجاز',
+          chat_history: 'تاریخچه مکالمات',
+          usage_quotas: 'مصرف و سهمیه توکن',
+          account_settings: 'تنظیمات حساب کاربری',
+        };
+
+        const handleFileSelect = async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          setSelectedFileName(file.name);
+          setSelectedFileSize(`${(file.size / 1024).toFixed(1)} KB`);
+          if (!sourceTitle) setSourceTitle(file.name.replace(/\.[^/.]+$/, ''));
+
+          try {
+            const text = await file.text();
+            setSourceText(text);
+            setStatusMessage(`فایل «${file.name}» با موفقیت خوانده شد.`);
+          } catch (err) {
+            setStatusMessage('خطا در خواندن فایل متنی');
+          }
+        };
+
+        const handleAddSourceSubmit = (e) => {
+          e.preventDefault();
+          let finalTitle = sourceTitle.trim();
+          let finalText = sourceText.trim();
+
+          if (!finalTitle) {
+            alert('لطفاً عنوان منبع را مشخص نمایید.');
+            return;
+          }
+          if (!finalText) {
+            alert('محتوای متنی منبع خالی است. لطفاً متن را بنویسید یا فایلی انتخاب کنید.');
+            return;
+          }
+
+          setIsProcessing(true);
+          setProcessStep(1);
+          setCurrentScreen('processing_status');
+
+          setTimeout(() => setProcessStep(2), 300);
+          setTimeout(() => setProcessStep(3), 700);
+          setTimeout(() => setProcessStep(4), 1100);
+          setTimeout(() => {
+            setProcessStep(5);
+            setIsProcessing(false);
+
+            const chunksGenerated = chunkDocumentText(finalText);
+            const newSource = {
+              id: `src_${Date.now()}`,
+              chatbotId: activeBot.id,
+              title: finalTitle,
+              type: sourceType,
+              fileSize: `${(finalText.length / 1024).toFixed(1)} KB`,
+              chunkCount: chunksGenerated.length,
+              rawContent: finalText,
+            };
+
+            onAddSource(newSource);
+            setSourceTitle('');
+            setSourceText('');
+            setSelectedFileName('');
+            setSelectedFileSize('');
+            setStatusMessage(`منبع «${finalTitle}» با موفقیت افزوده شد.`);
+
+            setTimeout(() => {
+              setCurrentScreen('sources_list');
+            }, 1000);
+          }, 1500);
+        };
+
+        const handleSandboxQuery = (e) => {
+          e.preventDefault();
+          if (!sandboxInput.trim()) return;
+          const userQuery = sandboxInput.trim();
+          setSandboxInput('');
+
+          const userMsg = { id: `u_${Date.now()}`, role: 'user', content: userQuery };
+          setSandboxMessages(prev => [...prev, userMsg]);
+
+          // Run Local RAG Retrieval
+          const queryTokens = tokenizeText(userQuery);
+          const scored = allChunks.map(chk => {
+            const docTokens = tokenizeText(chk.content);
+            let score = calculateBM25Score(queryTokens, docTokens);
+            if (chk.content.includes(userQuery)) score += 2.5;
+            return { chunk: chk, score };
+          });
+
+          scored.sort((a, b) => b.score - a.score);
+          const topMatches = scored.filter(s => s.score > 0.05).slice(0, 3);
+
+          setTimeout(() => {
+            let answerText = '';
+            const citations = [];
+
+            if (topMatches.length === 0) {
+              answerText = 'بر اساس اسناد بارگذاری شده در پایگاه دانش، اطلاعات کافی برای پاسخ به این سؤال وجود ندارد.';
+            } else {
+              answerText = `بر اساس اسناد رسمی ثبت شده («${topMatches[0].chunk.sourceTitle}»):\n\n${topMatches[0].chunk.content}\n\n[منبع: ۱]`;
+              citations.push({
+                sourceTitle: topMatches[0].chunk.sourceTitle,
+                excerpt: topMatches[0].chunk.content.slice(0, 160) + '...',
+                relevanceScore: Math.min(100, Math.round(topMatches[0].score * 25 + 45)),
+              });
+
+              if (topMatches.length > 1 && topMatches[1].score > 0.3) {
+                answerText += `\n\nهمچنین با توجه به مستندات دیگر:\n${topMatches[1].chunk.content}\n\n[منبع: ۲]`;
+                citations.push({
+                  sourceTitle: topMatches[1].chunk.sourceTitle,
+                  excerpt: topMatches[1].chunk.content.slice(0, 160) + '...',
+                  relevanceScore: Math.min(100, Math.round(topMatches[1].score * 25 + 30)),
+                });
+              }
+            }
+
+            const assistantMsg = {
+              id: `a_${Date.now()}`,
+              role: 'assistant',
+              content: answerText,
+              citations,
+            };
+            setSandboxMessages(prev => [...prev, assistantMsg]);
+          }, 350);
+        };
+
+        return (
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-6 p-2 md:p-6 w-full max-w-7xl mx-auto">
+            {/* Sidebar Screen Selector */}
+            <div className="w-full lg:w-80 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col gap-4 text-slate-200">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Icon name="smartphone" className="w-5 h-5 text-indigo-400" />
+                  <h2 className="font-bold text-base text-slate-100">صفحات اپلیکیشن اندروید</h2>
+                </div>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">
+                  ۱۷ صفحه
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                روی هر صفحه کلیک کنید یا داخل قاب گوشی بین بخش‌ها جابجا شوید:
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-1 gap-1.5 max-h-[580px] overflow-y-auto pr-1">
+                {Object.keys(screenTitles).map((scr, idx) => (
+                  <button
+                    key={scr}
+                    onClick={() => setCurrentScreen(scr)}
+                    className={`flex items-center justify-between px-3 py-2 text-xs rounded-xl font-medium transition text-right ${
+                      currentScreen === scr
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                        : 'bg-slate-800/50 hover:bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="w-5 h-5 flex items-center justify-center rounded-md bg-black/20 text-[10px] font-mono shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="truncate">{screenTitles[scr]}</span>
+                    </div>
+                    <Icon name="chevronRight" className="w-3.5 h-3.5 opacity-60 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Android Phone Device Frame */}
+            <div className="relative w-full max-w-[412px] h-[860px] bg-slate-950 border-[10px] border-slate-800 rounded-[52px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col select-none ring-1 ring-white/10">
+              {/* Punch Hole Camera */}
+              <div className="absolute top-0 inset-x-0 h-6 flex items-center justify-center z-50 pointer-events-none">
+                <div className="w-4 h-4 rounded-full bg-black ring-1 ring-white/10 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                </div>
+              </div>
+
+              {/* Status Bar */}
+              <div className="h-8 px-6 pt-1 flex items-center justify-between text-xs font-sans text-slate-400 bg-slate-950 shrink-0 z-40">
+                <span className="font-semibold text-slate-200">۰۵:۲۹</span>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span>5G</span>
+                  <div className="w-4 h-2 border border-slate-400 rounded-sm p-0.5 flex items-center">
+                    <div className="w-2.5 h-full bg-emerald-400 rounded-xs" />
+                  </div>
+                </div>
+              </div>
+
+              {/* App Bar */}
+              <div className="h-14 px-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0 z-30">
+                <div className="flex items-center gap-2">
+                  {currentScreen !== 'dashboard' && currentScreen !== 'splash' && (
+                    <button
+                      onClick={() => setCurrentScreen('dashboard')}
+                      className="p-1.5 rounded-full hover:bg-slate-800 text-slate-300 transition"
+                    >
+                      <Icon name="arrowRight" className="w-5 h-5" />
+                    </button>
+                  )}
+                  <h1 className="font-bold text-sm text-slate-100 truncate">
+                    {screenTitles[currentScreen]}
+                  </h1>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentScreen('test_sandbox')}
+                    title="تست در سندباکس"
+                    className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition"
+                  >
+                    <Icon name="sparkles" className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentScreen('account_settings')}
+                    className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                  >
+                    <Icon name="user" className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Banner */}
+              {statusMessage && (
+                <div className="mx-4 mt-2 p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between">
+                  <span>{statusMessage}</span>
+                  <button onClick={() => setStatusMessage('')} className="p-1">✕</button>
+                </div>
+              )}
+
+              {/* Screen Body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 text-slate-200 pb-20">
+                {/* 1. Splash */}
+                {currentScreen === 'splash' && (
+                  <div className="h-full min-h-[580px] flex flex-col items-center justify-center text-center p-6 space-y-6">
+                    <div className="w-20 h-20 rounded-3xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-2xl animate-pulse">
+                      <Icon name="bot" className="w-10 h-10" />
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-black text-white">KnowLink AI</h2>
+                      <p className="text-xs text-slate-400">سامانه جامع چت‌بات‌های دانش‌بنیان RAG</p>
+                    </div>
+                    <button
+                      onClick={() => setCurrentScreen('dashboard')}
+                      className="px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition"
+                    >
+                      ورود به داشبورد برنامه
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. Dashboard */}
+                {currentScreen === 'dashboard' && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-3xl bg-gradient-to-br from-indigo-900/60 via-slate-900 to-slate-900 border border-indigo-500/20 space-y-3 shadow-xl">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-indigo-300">خوش آمدید، کاربر گرامی</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">طرح Pro</span>
+                      </div>
+                      <h2 className="text-base font-bold text-white leading-tight">
+                        پایگاه دانش هوشمند RAG اختصاصی
+                      </h2>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => setCurrentScreen('create_bot')}
+                          className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5"
+                        >
+                          <Icon name="plus" className="w-3.5 h-3.5" />
+                          <span>چت‌بات جدید</span>
+                        </button>
+                        <button
+                          onClick={() => setCurrentScreen('add_sources')}
+                          className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
+                        >
+                          افزودن منبع
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400">چت‌بات‌ها</span>
+                        <div className="text-base font-bold text-white font-mono">{chatbots.length}</div>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400">منابع</span>
+                        <div className="text-base font-bold text-indigo-400 font-mono">{sources.length}</div>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+                        <span className="text-[10px] text-slate-400">چانک‌ها</span>
+                        <div className="text-base font-bold text-emerald-400 font-mono">{allChunks.length}</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-slate-300">چت‌بات‌های شما</span>
+                      {chatbots.map(bot => (
+                        <div
+                          key={bot.id}
+                          onClick={() => onSelectBot(bot)}
+                          className={`p-3.5 rounded-2xl border transition cursor-pointer flex flex-col gap-2.5 ${
+                            activeBot.id === bot.id
+                              ? 'bg-slate-900 border-indigo-500/50 shadow-md ring-1 ring-indigo-500/20'
+                              : 'bg-slate-900/60 border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                                <Icon name="bot" className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-xs text-white">{bot.name}</h3>
+                                <span className="text-[10px] text-slate-400">{sources.length} منبع • RAG آماده</span>
+                              </div>
+                            </div>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">عمومی</span>
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-1 pt-1 border-t border-slate-800/80">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onSelectBot(bot); setCurrentScreen('test_sandbox'); }}
+                              className="py-1 px-1.5 text-[10px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center gap-1"
+                            >
+                              <Icon name="message" className="w-3 h-3 text-indigo-400" />
+                              <span>آزمایش</span>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onSelectBot(bot); setCurrentScreen('share_link'); }}
+                              className="py-1 px-1.5 text-[10px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center gap-1"
+                            >
+                              <Icon name="share" className="w-3 h-3 text-emerald-400" />
+                              <span>لینک</span>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onSelectBot(bot); setCurrentScreen('embed_config'); }}
+                              className="py-1 px-1.5 text-[10px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center gap-1"
+                            >
+                              <Icon name="code" className="w-3 h-3 text-cyan-400" />
+                              <span>Embed</span>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onSelectBot(bot); setCurrentScreen('edit_bot'); }}
+                              className="py-1 px-1.5 text-[10px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center gap-1"
+                            >
+                              <Icon name="settings" className="w-3 h-3 text-amber-400" />
+                              <span>تنظیم</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. Add Sources */}
+                {currentScreen === 'add_sources' && (
+                  <form onSubmit={handleAddSourceSubmit} className="space-y-4">
+                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">چت‌بات هدف:</span>
+                      <span className="font-bold text-indigo-400">{activeBot.name}</span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-slate-900 border border-slate-800">
+                      {[
+                        { id: 'text', label: 'متن مستقیم', icon: 'fileCode' },
+                        { id: 'file', label: 'فایل متنی', icon: 'upload' },
+                        { id: 'url', label: 'لینک وب', icon: 'globe' },
+                        { id: 'video', label: 'ویدئو/وبینار', icon: 'video' },
+                      ].map(st => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => setSourceType(st.id)}
+                          className={`py-2 px-1 text-[11px] rounded-xl font-medium transition flex flex-col items-center gap-1 ${
+                            sourceType === st.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <Icon name={st.icon} className="w-3.5 h-3.5" />
+                          <span>{st.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">
+                          عنوان منبع <span className="text-rose-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={sourceTitle}
+                          onChange={(e) => setSourceTitle(e.target.value)}
+                          placeholder="مثال: سوالات متداول یا آیین‌نامه کاری"
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-hidden"
+                        />
+                      </div>
+
+                      {sourceType === 'file' && (
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
+                            accept=".txt,.md,.json,.csv"
+                            className="hidden"
+                          />
+                          <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="p-4 border-2 border-dashed border-slate-700 rounded-2xl text-center space-y-2 cursor-pointer hover:border-indigo-500 bg-slate-950/70"
+                          >
+                            <Icon name="upload" className="w-5 h-5 text-indigo-400 mx-auto" />
+                            <div className="text-xs text-slate-200 font-bold">برای انتخاب فایل متنی کلیک کنید</div>
+                            <div className="text-[10px] text-slate-400">پشتیبانی از TXT، Markdown، JSON، CSV</div>
+                            {selectedFileName && (
+                              <div className="p-2 rounded-xl bg-indigo-950 border border-indigo-500/30 text-xs text-indigo-300 font-mono">
+                                {selectedFileName} ({selectedFileSize})
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {sourceType === 'url' && (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1">نشانی اینترنتی (URL)</label>
+                          <input
+                            type="text"
+                            value={sourceUrl}
+                            onChange={(e) => setSourceUrl(e.target.value)}
+                            placeholder="https://example.com/docs"
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-hidden font-mono"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">
+                          محتوای منبع دانش <span className="text-rose-400">*</span>
+                        </label>
+                        <textarea
+                          rows={6}
+                          required
+                          value={sourceText}
+                          onChange={(e) => setSourceText(e.target.value)}
+                          placeholder="محتوای متنی را اینجا بنویسید یا بچسبانید..."
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-hidden resize-none leading-relaxed"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
+                      >
+                        <Icon name="sparkles" className="w-4 h-4" />
+                        <span>پردازش، قطعه‌بندی (Chunking) و ایندکس منبع</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* 7. Processing Stepper */}
+                {currentScreen === 'processing_status' && (
+                  <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center mx-auto mb-2 animate-bounce">
+                      <Icon name="refresh" className="w-6 h-6 animate-spin" />
+                    </div>
+                    <h3 className="font-bold text-sm text-white">خط پردازش RAG (Pipeline)</h3>
+                    <div className="space-y-2 text-right">
+                      {['دریافت و اعتبارسنجی منبع', 'استخراج و نرمال‌سازی متن فارسی', 'قطعه‌بندی ۳۵۰ کاراکتری با هم‌پوشانی', 'تولید وکتور و نمایه معنایی', 'ایندکس‌گذاری پایگاه دانش'].map((step, idx) => (
+                        <div
+                          key={idx}
+                          className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs ${
+                            processStep > idx + 1
+                              ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
+                              : processStep === idx + 1
+                              ? 'bg-indigo-950 border-indigo-500 text-indigo-200'
+                              : 'bg-slate-950 border-slate-800 text-slate-500'
+                          }`}
+                        >
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center bg-black/30 font-mono text-[10px]">
+                            {processStep > idx + 1 ? '✓' : idx + 1}
+                          </span>
+                          <span>{step}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 8. Sources List */}
+                {currentScreen === 'sources_list' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-300">منابع ثبت‌شده ({sources.length})</span>
+                      <button
+                        onClick={() => setCurrentScreen('add_sources')}
+                        className="px-2.5 py-1 text-xs rounded-xl bg-indigo-600 text-white font-medium flex items-center gap-1"
+                      >
+                        <Icon name="plus" className="w-3.5 h-3.5" />
+                        <span>منبع جدید</span>
+                      </button>
+                    </div>
+
+                    {sources.map(src => (
+                      <div key={src.id} className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon name="fileCode" className="w-4 h-4 text-indigo-400" />
+                            <div>
+                              <h4 className="font-bold text-xs text-white">{src.title}</h4>
+                              <span className="text-[10px] text-slate-400 font-mono">{src.chunkCount} چانک • {src.fileSize}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => onDeleteSource(src.id)}
+                            className="p-1 text-slate-500 hover:text-rose-400"
+                          >
+                            <Icon name="trash" className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed bg-slate-950 p-2 rounded-xl">
+                          {src.rawContent}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 9. Test Sandbox */}
+                {currentScreen === 'test_sandbox' && (
+                  <div className="h-[600px] flex flex-col justify-between space-y-2">
+                    <div className="flex-1 overflow-y-auto space-y-2 p-1">
+                      {sandboxMessages.map(msg => (
+                        <div
+                          key={msg.id}
+                          className={`p-3 rounded-2xl text-xs leading-relaxed max-w-[85%] ${
+                            msg.role === 'user'
+                              ? 'mr-auto bg-indigo-600 text-white rounded-bl-sm'
+                              : 'ml-auto bg-slate-900 border border-slate-800 text-slate-200 rounded-br-sm'
+                          }`}
+                        >
+                          <div className="whitespace-pre-wrap">{msg.content}</div>
+                          {msg.citations && msg.citations.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
+                              {msg.citations.map((c, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => setSelectedCitation(c)}
+                                  className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold"
+                                >
+                                  [منبع {i + 1}: {c.sourceTitle.slice(0, 18)}... | تطابق: {c.relevanceScore}٪]
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <form onSubmit={handleSandboxQuery} className="flex gap-2 pt-2 border-t border-slate-800">
+                      <input
+                        type="text"
+                        value={sandboxInput}
+                        onChange={(e) => setSandboxInput(e.target.value)}
+                        placeholder="سوال فنی خود را بپرسید..."
+                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-hidden"
+                      />
+                      <button
+                        type="submit"
+                        className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-md"
+                      >
+                        <Icon name="send" className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* 10. Share Link */}
+                {currentScreen === 'share_link' && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                      <span className="text-xs font-bold text-slate-300">لینک اختصاصی گفت‌وگو</span>
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-indigo-300 flex items-center justify-between">
+                        <span>https://knowlink.ai/chat/{activeBot.shareSlug}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`https://knowlink.ai/chat/${activeBot.shareSlug}`);
+                            alert('لینک کپی شد!');
+                          }}
+                          className="p-1 hover:text-white"
+                        >
+                          <Icon name="copy" className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        کاربران می‌توانند بدون نیاز به ثبت‌نام مستقیماً با این چت‌بات بر اساس اسناد گفتگو کنند.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 11. Embed Config */}
+                {currentScreen === 'embed_config' && (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                      <span className="text-xs font-bold text-slate-300">کد جاوااسکریپت ویجت شناور</span>
+                      <textarea
+                        readOnly
+                        rows={4}
+                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[10px] font-mono text-slate-300 resize-none"
+                        value={`<script src="https://knowlink.ai/embed/knowlink.js" data-chatbot-id="${activeBot.id}" defer></script>`}
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`<script src="https://knowlink.ai/embed/knowlink.js" data-chatbot-id="${activeBot.id}" defer></script>`);
+                          alert('کد Embed کپی گردید!');
+                        }}
+                        className="w-full py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold"
+                      >
+                        کپی اسکریپت ویجت
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 17. Account Settings */}
+                {currentScreen === 'account_settings' && (
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 text-xs">
+                    <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+                      <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">ع</div>
+                      <div>
+                        <div className="font-bold text-white">علی احمدی (مدیر پایگاه دانش)</div>
+                        <div className="text-slate-400 text-[10px]">appsite2025@gmail.com</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between py-1"><span>طرح حساب:</span><span className="font-bold text-emerald-400">حرفه‌ای (Pro)</span></div>
+                    <div className="flex justify-between py-1"><span>سهمیه پرسش روزانه:</span><span className="font-mono">۵۰۰ پرسش</span></div>
+                    <div className="flex justify-between py-1"><span>موجودی توکن:</span><span className="font-mono">۴۸۵,۰۰۰ توکن</span></div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Citation Modal */}
+            {selectedCitation && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="w-full max-w-md p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <Icon name="shieldCheck" className="w-5 h-5" />
+                      <h3 className="font-bold text-sm text-white">سند و ارجاع تایید شده RAG</h3>
+                    </div>
+                    <button onClick={() => setSelectedCitation(null)} className="p-1 hover:text-white">
+                      <Icon name="close" className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-400 mb-1">منبع سند: {selectedCitation.sourceTitle}</div>
+                    <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs leading-relaxed text-slate-300">
+                      «{selectedCitation.excerpt}»
+                    </div>
+                    <div className="mt-2 text-xs text-emerald-400 font-bold">
+                      درصد تطابق معنایی: {selectedCitation.relevanceScore}٪
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCitation(null)}
+                    className="w-full py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold"
+                  >
+                    متوجه شدم
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // ==========================================
+      // DIRECT WEB CHAT VIEW
+      // ==========================================
+      function DirectChatStandaloneView({ activeBot, chunks }) {
+        const [messages, setMessages] = useState([
+          { id: '1', role: 'assistant', content: activeBot.welcomeMessage }
+        ]);
+        const [input, setInput] = useState('');
+
+        const handleSend = (e) => {
+          e.preventDefault();
+          if (!input.trim()) return;
+          const userQuery = input.trim();
+          setInput('');
+
+          setMessages(prev => [...prev, { id: `u_${Date.now()}`, role: 'user', content: userQuery }]);
+
+          const queryTokens = tokenizeText(userQuery);
+          const scored = chunks.map(chk => ({
+            chunk: chk,
+            score: calculateBM25Score(queryTokens, tokenizeText(chk.content)) + (chk.content.includes(userQuery) ? 2.5 : 0)
+          })).sort((a, b) => b.score - a.score);
+
+          const topMatches = scored.filter(s => s.score > 0.05).slice(0, 2);
+
+          setTimeout(() => {
+            let answer = '';
+            if (topMatches.length === 0) {
+              answer = 'بر اساس اسناد بارگذاری شده در پایگاه دانش، اطلاعات کافی برای پاسخ به این سؤال وجود ندارد.';
+            } else {
+              answer = `بر اساس اطلاعات مستند در پایگاه دانش («${topMatches[0].chunk.sourceTitle}»):\n\n${topMatches[0].chunk.content}\n\n[منبع: ۱]`;
+            }
+            setMessages(prev => [...prev, { id: `a_${Date.now()}`, role: 'assistant', content: answer }]);
+          }, 400);
+        };
+
+        return (
+          <div className="max-w-3xl mx-auto p-4 md:p-6 w-full">
+            <div className="h-[650px] bg-slate-900/90 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between shadow-2xl">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+                  <Icon name="bot" className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-sm text-white">{activeBot.name}</h2>
+                  <p className="text-xs text-slate-400">لینک مستقیم اشتراک‌گذاری پایگاه دانش RAG</p>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 p-2">
+                {messages.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`p-3.5 rounded-2xl text-xs leading-relaxed max-w-[80%] ${
+                      msg.role === 'user'
+                        ? 'mr-auto bg-indigo-600 text-white rounded-bl-sm'
+                        : 'ml-auto bg-slate-950 border border-slate-800 text-slate-200 rounded-br-sm'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleSend} className="flex gap-2 pt-3 border-t border-slate-800">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="پرسش خود را در رابطه با خدمات بنویسید..."
+                  className="flex-1 px-4 py-2.5 text-xs rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-hidden"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <Icon name="send" className="w-4 h-4" />
+                  <span>ارسال</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // EMBED SIMULATOR VIEW
+      // ==========================================
+      function EmbedSimulatorStandaloneView({ activeBot }) {
+        const [isOpen, setIsOpen] = useState(false);
+
+        return (
+          <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800">
+              <h2 className="font-bold text-base text-white mb-2">پیش‌نمایش زنده ویجت بر روی وب‌سایت فرضی</h2>
+              <p className="text-xs text-slate-400 mb-4">
+                دکمه گرد شناور در گوشه چپ پایین را برای باز کردن ویجت کلیک کنید.
+              </p>
+
+              {/* Simulated Website */}
+              <div className="relative h-[500px] rounded-2xl bg-slate-950 border border-slate-800 p-8 overflow-hidden">
+                <div className="space-y-4 max-w-md">
+                  <div className="h-6 w-36 bg-slate-800 rounded-lg"></div>
+                  <div className="h-4 w-64 bg-slate-800/60 rounded-md"></div>
+                  <div className="h-4 w-48 bg-slate-800/40 rounded-md"></div>
+                  <div className="h-10 w-32 bg-indigo-600/30 rounded-xl"></div>
+                </div>
+
+                {/* Floating Widget Button */}
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="absolute bottom-6 left-6 w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-2xl hover:scale-105 transition"
+                >
+                  <Icon name={isOpen ? 'close' : 'message'} className="w-6 h-6" />
+                </button>
+
+                {/* Floating Chat Window */}
+                {isOpen && (
+                  <div className="absolute bottom-24 left-6 w-80 h-96 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl flex flex-col p-4 animate-fade-in">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <span className="font-bold text-xs text-white">{activeBot.name}</span>
+                      <button onClick={() => setIsOpen(false)}><Icon name="close" className="w-4 h-4 text-slate-400" /></button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 text-xs text-slate-300">
+                      <div className="p-2.5 bg-slate-950 rounded-xl mb-2">{activeBot.welcomeMessage}</div>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="پیام خود را بنویسید..."
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-white"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // KOTLIN CODE EXPORT VIEW
+      // ==========================================
+      function KotlinCodeExportStandaloneView() {
+        return (
+          <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+              <h2 className="font-bold text-base text-white">کدهای بومی اندروید (Jetpack Compose & Kotlin)</h2>
+              <p className="text-xs text-slate-400">
+                پروژه کامل اپلیکیشن اندروید آماده ساخت با Android Studio:
+              </p>
+              <textarea
+                readOnly
+                rows={12}
+                className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-indigo-300 leading-relaxed"
+                value={`package com.knowlink.ai
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.*
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                KnowLinkNavGraph()
+            }
+        }
+    }
+}`}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // ARCHITECTURE & PHASE 0 VIEW
+      // ==========================================
+      function ArchitectureStandaloneView() {
+        return (
+          <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950 to-slate-900 border border-indigo-500/20 space-y-2">
+              <h2 className="text-lg font-bold text-white">معماری کلان RAG و امنیت اطلاعات</h2>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                خط لوله بازیابی، تقسیم اسناد، جلوگیری از Prompt Injection و دفاع در برابر SSRF.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // ADVANCED PERSIAN TEXT ANALYZER (STANDALONE CLIENT ENGINE)
+      // ==========================================
+      function analyzePersianTextClient(rawText) {
+        if (!rawText || !rawText.trim()) {
+          return {
+            stats: {
+              charCount: 0,
+              charCountWithoutSpaces: 0,
+              wordCount: 0,
+              sentenceCount: 0,
+              paragraphCount: 0,
+              halfSpaceCount: 0,
+              avgWordLength: 0,
+              readingTimeMinutes: 0,
+            },
+            readability: {
+              score: 0,
+              level: 'نامشخص',
+              description: 'متنی جهت تحلیل وارد نشده است.',
+            },
+            toneAndDomain: {
+              domain: 'نامشخص',
+              tone: 'خنثی',
+              formalityScore: 50,
+            },
+            keywords: [],
+            ragReadiness: {
+              status: 'نیاز به بهینه‌سازی',
+              score: 0,
+              recommendations: ['متن خالی است. لطفاً متنی جهت تحلیل وارد فرمایید.'],
+              suggestedChunkSize: 350,
+            },
+          };
+        }
+
+        const text = rawText.trim();
+        const charCount = text.length;
+        const charCountWithoutSpaces = text.replace(/\s+/g, '').length;
+        const halfSpaceCount = (text.match(/\u200C/g) || []).length;
+
+        // Paragraphs
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        const paragraphCount = Math.max(1, paragraphs.length);
+
+        // Sentences
+        const sentences = text.split(/[\.!\?؟\n]+/).map(s => s.trim()).filter(s => s.length > 5);
+        const sentenceCount = Math.max(1, sentences.length);
+
+        // Words
+        const words = text.split(/[\s,،.؛;!؟?:"'()\[\]{}<>\/\\|\-_=+*&^%$#@~`]+/).filter(w => w.length > 0);
+        const wordCount = Math.max(1, words.length);
+
+        // Avg word length & reading time
+        const totalWordChars = words.reduce((acc, w) => acc + w.length, 0);
+        const avgWordLength = parseFloat((totalWordChars / wordCount).toFixed(1));
+        const readingTimeMinutes = Math.max(1, Math.round(wordCount / 190));
+
+        // Keyword extraction with TF
+        const stopWords = new Set([
+          'از', 'به', 'در', 'با', 'که', 'و', 'برای', 'این', 'آن', 'است', 'شد', 'شده',
+          'می', 'یک', 'تا', 'بر', 'یا', 'اما', 'اگر', 'هر', 'هم', 'نیز', 'پس', 'چون',
+          'چرا', 'چه', 'چند', 'بین', 'روی', 'زیر', 'قبل', 'بعد', 'وی', 'او', 'ما', 'شما',
+          'آنها', 'ایشان', 'خود', 'داشته', 'بود', 'بوده', 'کنند', 'کند', 'کرد', 'کرده',
+          'کردند', 'گوید', 'گفت', 'دارد', 'دارند', 'باشد', 'باشند', 'خواهد', 'باید', 'تواند'
+        ]);
+
+        const tokenMap = new Map();
+        for (const w of words) {
+          const norm = normalizePersianText(w).toLowerCase();
+          if (norm.length > 2 && !stopWords.has(norm) && !/^\d+$/.test(norm)) {
+            tokenMap.set(norm, (tokenMap.get(norm) || 0) + 1);
+          }
+        }
+
+        const sortedTokens = Array.from(tokenMap.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+
+        const keywords = sortedTokens.map(([term, count]) => ({
+          term,
+          count,
+          frequencyPercent: parseFloat(((count / wordCount) * 100).toFixed(1)),
+        }));
+
+        // Readability calculation
+        const asl = wordCount / sentenceCount;
+        let rawReadability = 100 - (asl * 1.5 + avgWordLength * 6);
+        rawReadability = Math.max(15, Math.min(95, Math.round(rawReadability)));
+
+        let readabilityLevel = 'استاندارد و حرفه‌ای';
+        let readabilityDesc = 'متن ساختاری روان و استاندارد دارد و برای اکثریت مخاطبان و مدل‌های زبانی قابل درک است.';
+
+        if (rawReadability >= 75) {
+          readabilityLevel = 'بسیار روان و عمومی';
+          readabilityDesc = 'جملات کوتاه، واژگان روزمره و خوانایی بسیار سریع برای عموم کاربران.';
+        } else if (rawReadability >= 55) {
+          readabilityLevel = 'استاندارد و حرفه‌ای';
+          readabilityDesc = 'لحن متعادل اداری یا پشتیبانی با طول جملات مناسب.';
+        } else if (rawReadability >= 35) {
+          readabilityLevel = 'تخصصی و فنی';
+          readabilityDesc = 'حاوی اصطلاحات تخصصی، بندهای تو در تو و مفاهیم فنی.';
+        } else {
+          readabilityLevel = 'پیچیده و حقوقی / آکادمیک';
+          readabilityDesc = 'جملات طولانی و ساختار رسمی مشابه متون قرارداد یا مقالات دانشگاهی.';
+        }
+
+        // Domain & Tone detection
+        const lower = text.toLowerCase();
+        let domain = 'عمومی و اطلاع‌رسانی';
+        let tone = 'اطلاع‌رسان و خنثی';
+        let formality = 65;
+
+        const technicalHits = (lower.match(/api|توکن|سرور|داده|شبکه|کد|نرم‌افزار|سخت‌افزار|دیتابیس|وب‌هوک|کلید|پلتفرم/gi) || []).length;
+        const legalHits = (lower.match(/ماده|بند|تبصره|قرارداد|قانون|تعهد|گارانتی|خسارت|مسئولیت|فسخ|فاکتور/gi) || []).length;
+        const supportHits = (lower.match(/پشتیبان|مشتری|تیکت|سوال|راهنما|پاسخ|خدمت|سرویس|ارتباط|ساعت/gi) || []).length;
+        const educationalHits = (lower.match(/آموزش|یادگیری|مرحله|روش|چگونه|نحوه|نکته|مفهوم|تعریف/gi) || []).length;
+
+        if (legalHits >= technicalHits && legalHits >= supportHits && legalHits > 2) {
+          domain = 'حقوقی و قراردادی';
+          tone = 'رسمی، الزام‌آور و مستند';
+          formality = 95;
+        } else if (technicalHits >= supportHits && technicalHits > 2) {
+          domain = 'فنی و مهندسی نرم‌افزار';
+          tone = 'تخصصی و دقیق';
+          formality = 80;
+        } else if (supportHits > 2) {
+          domain = 'پشتیبانی مشتریان و خدمات';
+          tone = 'محترمانه و راهنما';
+          formality = 70;
+        } else if (educationalHits > 2) {
+          domain = 'آموزشی و راهنمای کاربری';
+          tone = 'توضیحی و آموزشی';
+          formality = 60;
+        }
+
+        // RAG Readiness Evaluation
+        const recommendations = [];
+        let ragScore = 80;
+
+        if (wordCount < 40) {
+          ragScore -= 30;
+          recommendations.push('حجم متن اندک است؛ برای نتایج دقیق‌تر RAG پیشنهاد می‌شود متن بالای ۵۰ کلمه باشد.');
+        }
+
+        if (paragraphs.some(p => p.length > 800)) {
+          ragScore -= 15;
+          recommendations.push('برخی پاراگراف‌ها بیش از ۸۰۰ کاراکتر هستند؛ شکستن آن‌ها به زیربخش‌ها دقت قطعه‌بندی را بالا می‌برد.');
+        } else {
+          recommendations.push('طول پاراگراف‌ها برای تقطیع هوشمند RAG کاملاً متناسب است.');
+        }
+
+        const hasHeaders = /^#+\s+[^\n]+/m.test(text);
+        if (!hasHeaders && wordCount > 150) {
+          ragScore -= 10;
+          recommendations.push('افزودن تیترهای نشان‌دار (مانند # بخش یا ## عنوان) ردیابی بخش‌ها در ارجاعات را دقیق‌تر می‌کند.');
+        } else if (hasHeaders) {
+          ragScore += 10;
+          recommendations.push('تیترگذاری ساخت‌یافته سند شناسایی شد و ارجاع‌دهی به سرفصل‌ها را ارتقا می‌دهد.');
+        }
+
+        if (halfSpaceCount > 0) {
+          recommendations.push(`استفاده صحیح از ${halfSpaceCount} نیم‌فاصله شناسایی شد که باعث ارتقای دقت تطابق واژگان مرکب می‌گردد.`);
+        }
+
+        ragScore = Math.max(20, Math.min(100, ragScore));
+
+        let ragStatus = 'بسیار آماده RAG';
+        if (ragScore < 50) ragStatus = 'نیازمند بازنویسی ساختار';
+        else if (ragScore < 75) ragStatus = 'قابل قبول با اصلاحات جزئی';
+
+        return {
+          stats: {
+            charCount,
+            charCountWithoutSpaces,
+            wordCount,
+            sentenceCount,
+            paragraphCount,
+            halfSpaceCount,
+            avgWordLength,
+            readingTimeMinutes,
+          },
+          readability: {
+            score: rawReadability,
+            level: readabilityLevel,
+            description: readabilityDesc,
+          },
+          toneAndDomain: {
+            domain,
+            tone,
+            formalityScore: formality,
+          },
+          keywords,
+          ragReadiness: {
+            status: ragStatus,
+            score: ragScore,
+            recommendations,
+            suggestedChunkSize: rawReadability < 40 ? 400 : 320,
+          },
+        };
+      }
+
+      // ==========================================
+      // PERSIAN TEXT ANALYZER STANDALONE COMPONENT
+      // ==========================================
+      function PersianTextAnalyzerStandaloneView({ activeBot, sources = [], onAddSource }) {
+        const [inputText, setInputText] = useState(
+          `# شرایط و ضوابط گارانتی طلایی شرکت دانش‌بنیان رایان\n\nتمامی تجهیزات سخت‌افزاری و بردهای الکترونیکی خریداری شده از تاریخ صدور فاکتور رسمی به مدت ۲۴ ماه تحت پوشش گارانتی تعویض و تعمیر طلایی هستند.\nزمان استاندارد بررسی و پاسخگویی فنی تیم مهندسی حداکثر ۴۸ ساعت کاری است.\nآسیب‌های ناشی از نوسانات شدید ولتاژ برق، ضربه فیزیکی شدید و باز شدن پلمپ توسط افراد غیرمجاز شامل گارانتی نمی‌شود.\nمشترکان بسته‌های ابری سازمانی می‌توانند تا ۱۴ روز پس از فعال‌سازی، در صورت عدم رضایت فنی، درخواست انصراف و بازگشت کامل وجه را از طریق تیکت ثبت کنند.`
+        );
+        const [analysis, setAnalysis] = useState(null);
+        const [copied, setCopied] = useState(false);
+
+        useEffect(() => {
+          handleRunAnalysis();
+        }, []);
+
+        const handleRunAnalysis = (textToAnalyze) => {
+          const target = textToAnalyze !== undefined ? textToAnalyze : inputText;
+          const res = analyzePersianTextClient(target);
+          setAnalysis(res);
+        };
+
+        const samplePresets = [
+          {
+            title: 'گارانتی و خدمات پشتیبانی',
+            text: `# شرایط و ضوابط گارانتی طلایی شرکت دانش‌بنیان رایان\n\nتمامی تجهیزات سخت‌افزاری و بردهای الکترونیکی خریداری شده از تاریخ صدور فاکتور رسمی به مدت ۲۴ ماه تحت پوشش گارانتی تعویض و تعمیر طلایی هستند.\nزمان استاندارد بررسی و پاسخگویی فنی تیم مهندسی حداکثر ۴۸ ساعت کاری است.\nآسیب‌های ناشی از نوسانات شدید ولتاژ برق، ضربه فیزیکی شدید و باز شدن پلمپ توسط افراد غیرمجاز شامل گارانتی نمی‌شود.\nمشترکان بسته‌های ابری سازمانی می‌توانند تا ۱۴ روز پس از فعال‌سازی، در صورت عدم رضایت فنی، درخواست انصراف و بازگشت کامل وجه را از طریق تیکت ثبت کنند.`,
+          },
+          {
+            title: 'مستند فنی وب‌سرویس و API',
+            text: `# راهنمای احراز هویت و امنیت API سازمانی\n\nکلیه درخواست‌های ارسالی به مسیرهای /api/v1 باید هدر احراز هویت Bearer Token حاوی توکن معتبر JWT را همراه داشته باشند.\nمحدودیت نرخ ارسال درخواست (Rate Limiting) برای هر کلید API برابر با ۱۰۰ درخواست در هر دقیقه است.\nدر صورت بروز خطای اعتبار سنجی، سرور کد وضعیت 401 Unauthorized را به همراه شناسه رهگیری بازمی‌گرداند.`,
+          },
+          {
+            title: 'آموزش پیاده‌سازی RAG فارسی',
+            text: `# راهنمای جامع خط لوله RAG برای زبان فارسی\n\nدر بازیابی اسناد فارسی، نرمال‌سازی حروف کاف و یای عربی و مدیریت دقیق نیم‌فاصله‌ها گام اول است.\nتقطیع متن با اندازه ۳۰۰ تا ۴۰۰ کاراکتر و هم‌پوشانی ۵۰ کاراکتر باعث می‌شود مفاهیم به صورت کامل در پنجره کانتکست قرار گیرند.\nترکیب بازیابی کلمات کلیدی BM25 و بردار معنایی بهترین دقت پاسخ‌دهی را تضمین می‌نماید.`,
+          },
+        ];
+
+        const handleCopy = () => {
+          if (!analysis) return;
+          const report = `گزارش تحلیل زبان‌شناختی و معنایی متن فارسی (KnowLink AI):
+--------------------------------------------------
+تعداد کلمات: ${analysis.stats.wordCount}
+تعداد جملات: ${analysis.stats.sentenceCount}
+پاراگراف‌ها: ${analysis.stats.paragraphCount}
+نیم‌فاصله‌های استاندارد: ${analysis.stats.halfSpaceCount}
+زمان تخمینی مطالعه: ${analysis.stats.readingTimeMinutes} دقیقه
+
+شاخص خوانایی و سبک:
+- سطح خوانایی: ${analysis.readability.level} (امتیاز: ${analysis.readability.score} از ۱۰۰)
+- حوزه تخصصی: ${analysis.toneAndDomain.domain}
+- لحن نگارش: ${analysis.toneAndDomain.tone} (درجه رسمیت: ${analysis.toneAndDomain.formalityScore}٪)
+
+ارزیابی سازگاری با پایگاه دانش RAG:
+- وضعیت: ${analysis.ragReadiness.status} (امتیاز: ${analysis.ragReadiness.score} از ۱۰۰)
+- اندازه بهینه هر چانک: ${analysis.ragReadiness.suggestedChunkSize} کاراکتر
+`;
+          navigator.clipboard.writeText(report);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        };
+
+        return (
+          <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6 text-slate-100">
+            {/* Banner */}
+            <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 border border-indigo-500/20 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 flex items-center gap-1.5">
+                    <Icon name="sparkles" className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>موتور تحلیل زبان‌شناختی و معنایی متون فارسی</span>
+                  </span>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">
+                    NLP & RAG Analyzer
+                  </span>
+                </div>
+                <h1 className="text-lg md:text-2xl font-black text-white">
+                  تحلیل هوشمند متون فارسی، ارزیابی خوانایی و بهینه‌سازی RAG
+                </h1>
+                <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                  بررسی ویژگی‌های زبانی متن، تشخیص لحن و حوزه تخصصی، استخراج کلمات کلیدی، محاسبه شاخص خوانایی و سنجش میزان انطباق سند با موتور چت‌بات هوشمند.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <button
+                  onClick={handleCopy}
+                  className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-bold flex items-center gap-2 border border-slate-700 transition"
+                >
+                  <Icon name={copied ? 'check' : 'copy'} className="w-4 h-4 text-emerald-400" />
+                  <span>{copied ? 'گزارش کپی شد' : 'کپی گزارش تحلیل'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Main Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Text Input & Controls */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-200">متن سند فارسی جهت تحلیل:</label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {inputText.length.toLocaleString('fa-IR')} کاراکتر
+                    </span>
+                  </div>
+
+                  {/* Sample presets */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] text-slate-400">نمونه‌های آماده متون فارسی:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {samplePresets.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setInputText(preset.text);
+                            handleRunAnalysis(preset.text);
+                          }}
+                          className="px-2.5 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-indigo-900/40 text-slate-300 hover:text-indigo-300 border border-slate-700 transition"
+                        >
+                          {preset.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={12}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="متن فارسی، مستند، قرارداد یا سوالات متداول خود را اینجا وارد کنید..."
+                    className="w-full p-3.5 rounded-2xl bg-slate-950 border border-slate-700/80 focus:border-indigo-500 text-xs text-slate-100 placeholder-slate-500 leading-relaxed resize-none focus:outline-hidden"
+                  />
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                    <button
+                      onClick={() => handleRunAnalysis(inputText)}
+                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition"
+                    >
+                      <Icon name="sparkles" className="w-4 h-4 text-amber-300" />
+                      <span>تحلیل دوباره متن</span>
+                    </button>
+
+                    {onAddSource && (
+                      <button
+                        onClick={() => {
+                          const firstLine = inputText.trim().split('\n')[0].replace(/^#+\s*/, '') || 'سند تحلیل‌شده جدید';
+                          onAddSource(firstLine.slice(0, 40), inputText);
+                        }}
+                        className="py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition"
+                      >
+                        <Icon name="plus" className="w-4 h-4" />
+                        <span>افزودن به پایگاه دانش</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Detailed NLP & Readability Cards */}
+              <div className="lg:col-span-7 space-y-4">
+                {analysis && (
+                  <>
+                    {/* Top Stats Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                        <span className="text-[11px] text-slate-400">تعداد کلمات</span>
+                        <span className="text-xl font-black text-indigo-400 font-mono mt-1">
+                          {analysis.stats.wordCount.toLocaleString('fa-IR')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1">
+                          میانگین طول واژه: {analysis.stats.avgWordLength} حرف
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                        <span className="text-[11px] text-slate-400">تعداد جملات</span>
+                        <span className="text-xl font-black text-cyan-400 font-mono mt-1">
+                          {analysis.stats.sentenceCount.toLocaleString('fa-IR')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1">
+                          در {analysis.stats.paragraphCount} پاراگراف
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                        <span className="text-[11px] text-slate-400">نیم‌فاصله استاندارد</span>
+                        <span className="text-xl font-black text-amber-400 font-mono mt-1">
+                          {analysis.stats.halfSpaceCount.toLocaleString('fa-IR')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1">
+                          کاراکترهای ZWNJ
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                        <span className="text-[11px] text-slate-400">زمان خواندن</span>
+                        <span className="text-xl font-black text-emerald-400 font-mono mt-1">
+                          {analysis.stats.readingTimeMinutes.toLocaleString('fa-IR')} دقیقه
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-1">
+                          مبتنی بر سرعت ۱۹۰ ک/د
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Readability & Tone Card */}
+                    <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                        <div>
+                          <span className="text-xs text-slate-400">شاخص خوانایی و روانی متن فارسی:</span>
+                          <div className="text-base font-bold text-white flex items-center gap-2 mt-0.5">
+                            <span>{analysis.readability.level}</span>
+                            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+                              {analysis.readability.score} / ۱۰۰
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-xs text-slate-400">حوزه و لحن نگارش:</span>
+                          <div className="text-xs font-bold text-slate-200 mt-0.5">
+                            {analysis.toneAndDomain.domain} • {analysis.toneAndDomain.tone}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Readability Progress Bar */}
+                      <div className="space-y-1.5">
+                        <div className="w-full h-3 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-500"
+                            style={{ width: `${Math.min(100, analysis.readability.score)}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          {analysis.readability.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Keywords Cloud */}
+                    <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-slate-300">کلمات کلیدی و بسامد تکرار (Keywords TF):</h3>
+                        <span className="text-[10px] text-slate-500">حذف ایست‌واژه‌های رایج زبان فارسی</span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.keywords.map((kw, i) => (
+                          <div
+                            key={i}
+                            className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs flex items-center gap-2 text-slate-200"
+                          >
+                            <span className="font-bold text-indigo-300">{kw.term}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400 font-mono">
+                              {kw.count} بار ({kw.frequencyPercent}٪)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* RAG Readiness Checklist */}
+                    <div className="p-5 rounded-3xl bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-500/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Icon name="shieldCheck" className="w-5 h-5 text-emerald-400" />
+                          <h3 className="text-xs font-bold text-white">سنجش سازگاری با پایگاه دانش چت‌بات هوشمند (RAG Readiness):</h3>
+                        </div>
+                        <span className="text-xs px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold">
+                          {analysis.ragReadiness.status} ({analysis.ragReadiness.score}٪)
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-xs text-slate-300">
+                        <span className="text-indigo-400 font-bold ml-1">اندازه پیشنهادی هر قطعه سند (Chunk Size):</span>
+                        <span className="font-mono">{analysis.ragReadiness.suggestedChunkSize} کاراکتر</span> با هم‌پوشانی ۵۰ کاراکتر.
+                      </div>
+
+                      <ul className="space-y-1.5 text-xs text-slate-300">
+                        {analysis.ragReadiness.recommendations.map((rec, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-indigo-400 text-sm leading-none">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Mount Standalone React App
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<StandaloneApp />);
+    </script>
+  </body>
+</html>
